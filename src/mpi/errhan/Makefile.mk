@@ -61,6 +61,7 @@ $(top_srcdir)/src/mpi/errhan/defmsg.h: $(top_srcdir)/maint/errmsgdirs $(errnames
 	( cd $(top_srcdir) && \
 	  ./maint/extracterrmsgs -careful=unusederr.txt \
 				 -skip=src/util/multichannel/mpi.c \
+				 -skip=src/mpid/adi/ofi/src/mpid_types.h \
 				 `cat maint/errmsgdirs` > .tmp 2>.err )
 	( cd $(top_srcdir) && if test -s .err ; then rm -f .tmp ; cat .err ; exit 1 ; fi )
 	( cd $(top_srcdir) && test -s .tmp && mv .tmp src/mpi/errhan/defmsg.h )

@@ -754,6 +754,7 @@ if [ $do_geterrmsgs = "yes" ] ; then
         rm -f .err
 	rm -f unusederr.txt
         maint/extracterrmsgs -careful=unusederr.txt \
+            -skip=src/mpid/adi/ofi/src/mpid_types.h \
 	    -skip=src/util/multichannel/mpi.c `cat maint/errmsgdirs` > \
 	    .tmp 2>.err
         # (error here is ok)
