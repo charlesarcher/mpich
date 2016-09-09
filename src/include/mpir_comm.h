@@ -32,7 +32,8 @@ typedef enum MPIR_Comm_hierarchy_kind_t {
 
 typedef enum {
     MPIR_COMM_MAP_TYPE__DUP,
-    MPIR_COMM_MAP_TYPE__IRREGULAR
+    MPIR_COMM_MAP_TYPE__IRREGULAR,
+    MPIR_COMM_MAP_TYPE__ENDPOINT,
 } MPIR_Comm_map_type_t;
 
 /* direction of mapping: local to local, local to remote, remote to
@@ -56,6 +57,7 @@ typedef struct MPIR_Comm_map {
     /* only valid for irregular map type */
     int src_mapping_size;
     int *src_mapping;
+    int *ep_mapping;
     int free_mapping;       /* we allocated the mapping */
 
     struct MPIR_Comm_map *next;
@@ -159,7 +161,7 @@ struct MPIR_Comm {
     int *internode_table;        /* internode_table[i] gives the rank in
                                     node_roots_comm of rank i in this comm.
                                     It is of size 'local_size'. */
-
+    struct MPIR_Comm  *endpoint_parent;
     int           is_low_group;  /* For intercomms only, this boolean is
 				    set for all members of one of the
 				    two groups of processes and clear for

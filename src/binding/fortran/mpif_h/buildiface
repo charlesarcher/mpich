@@ -201,6 +201,7 @@ foreach $_ (@ARGV) {
 	   'MPI_Status[]' => 'MPI_Fint',
 	   'MPI_Info*' => 'MPI_Fint *',
 	   'MPI_Info[]' => 'MPI_Fint',
+	   'MPI_Comm[]' => 'MPI_Fint',
 	   'MPI_Errhandler*' => 'MPI_Fint *',
 	   );
 
@@ -539,6 +540,7 @@ foreach $_ (@ARGV) {
     'Graph_neighbors' => '4',
                 'Graph_neighbors-4' => 'out:fint2int_array:*v3',
     'Comm_create' => '3', 'Comm_create-3' => 'out:handle::MPI_Comm',
+    'Comm_create_endpoints' => '4', 'Comm_create_endpoints-4' => 'out:handle_array:*v2:MPI_Comm',
     'Comm_create_group' => '4', 'Comm_create_group-4' => 'out:handle::MPI_Comm',
     'Comm_dup' => '2', 'Comm_dup-2' => 'out:handle::MPI_Comm',
     'Comm_dup_with_info' => '3', 

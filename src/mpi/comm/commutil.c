@@ -95,8 +95,9 @@ int MPII_Comm_init(MPIR_Comm * comm_p)
     comm_p->node_roots_comm = NULL;
     comm_p->intranode_table = NULL;
     comm_p->internode_table = NULL;
-
     /* abstractions bleed a bit here... :(*/
+    comm_p->endpoint_parent = NULL;
+    /* abstractions bleed a bit here... :( */
     comm_p->next_sched_tag = MPIR_FIRST_NBC_TAG;
 
     /* Initialize the revoked flag as false */
@@ -999,7 +1000,10 @@ int MPIR_Comm_delete_internal(MPIR_Comm * comm_ptr)
         /* This must be the recvcontext_id (i.e. not the (send)context_id)
          * because in the case of intercommunicators the send context ID is
          * allocated out of the remote group's bit vector, not ours. */
-        MPIR_Free_contextid(comm_ptr->recvcontext_id);
+        if(comm_ptr->endpoint_parent == NULL)
+            MPIR_Free_contextid(comm_ptr->recvcontext_id);
+        else
+            MPIR_Comm_free_impl(comm_ptr->endpoint_parent);
 
 #if MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__POBJ
         {

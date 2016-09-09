@@ -48,6 +48,7 @@ EXTERN_C_BEGIN
 #define G_RXC_MSG(x) MPIDI_Global.ctx[x].rx_msg
 #define G_RXC_CTR(x) MPIDI_Global.ctx[x].rx_ctr
 #else
+#define COMM_TO_EP(comm,rank) 0
 #define MPIDI_MAX_ENDPOINTS 0
 #define MPIDI_MAX_ENDPOINTS_BITS 0
 #define G_TXC_TAG(x) MPIDI_Global.ep
@@ -1066,6 +1067,7 @@ __SI__ int do_control_send(MPIDI_Send_control_t *control,
   control->send_buf    = send_buf;
   control->msgsize     = msgsize;
   control->comm_id     = comm_ptr->context_id;
+  control->endpoint_id = COMM_TO_EP(comm_ptr,comm_ptr->rank);
   control->ackreq      = ackreq;
   MPIR_Assert(sizeof(*control)<=MPIDI_Global.max_buffered_send);
   FI_RC_RETRY(fi_inject(G_TXC_MSG(0),

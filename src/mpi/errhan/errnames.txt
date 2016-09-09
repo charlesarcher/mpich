@@ -198,6 +198,8 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **winflavor %s: Window flavor is not compatible with the given operation (expected %s)
 
 **typenotpredefined: Datatype must be predefined
+**endpoints_arg: Unsupported my_num_ep argument
+**endpoints_arg %d: Unsupported my_num_ep argument (%d)
 
 # -- FIXME: Some (but not all) of the messages below this line have been used
 #---- The messages below this line haven't been used yet.
@@ -1092,6 +1094,8 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_comm_create %C %G %p:MPI_Comm_create(%C, %G, new_comm=%p) failed
 **mpi_comm_create_group:MPI_Comm_create_group failed
 **mpi_comm_create_group %C %G %d %p:MPI_Comm_create_group(%C, %G, %d, new_comm=%p) failed
+**mpi_comm_create_endpoints:MPI_Comm_create_endpoints failed
+**mpi_comm_create_endpoints %C %d %I %p:MPI_Comm_create_endpoints(%C, %d, %I, new_comm=%p) failed
 **mpi_comm_split:MPI_Comm_split failed
 **mpi_comm_split %C %d %d %p:MPI_Comm_split(%C, color=%d, key=%d, new_comm=%p) failed
 **mpi_comm_free:MPI_Comm_free failed

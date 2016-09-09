@@ -1,3 +1,4 @@
+endpoints 8 arg=10
 dup 2
 dupic 4
 commcreate1 8

@@ -789,6 +789,7 @@ typedef int (MPIX_Grequest_wait_function)(int, void **, double, MPI_Status *);
 #define MPI_ERR_RANK         6      /* Invalid rank */
 #define MPI_ERR_ROOT         7      /* Invalid root */
 #define MPI_ERR_TRUNCATE    14      /* Message truncated on receive */
+#define MPI_ERR_ENDPOINTS   73      /* Unsupported my_num_ep value */
 
 /* MPI Objects (other than COMM) */
 #define MPI_ERR_GROUP        8      /* Invalid group */
@@ -882,7 +883,8 @@ typedef int (MPIX_Grequest_wait_function)(int, void **, double, MPI_Status *);
 
 #define MPI_ERR_LASTCODE    0x3fffffff  /* Last valid error code for a 
 					   predefined error class */
-#define MPICH_ERR_LAST_CLASS 74     /* It is also helpful to know the
+/* WARNING: this is also defined in mpishared.h.  Update both locations */
+#define MPICH_ERR_LAST_CLASS 75     /* It is also helpful to know the
 				       last valid class */
 
 #define MPICH_ERR_FIRST_MPIX 100 /* Define a gap here because sock is
@@ -1082,6 +1084,8 @@ int MPI_Comm_free(MPI_Comm *comm) MPICH_API_PUBLIC;
 int MPI_Comm_test_inter(MPI_Comm comm, int *flag) MPICH_API_PUBLIC;
 int MPI_Comm_remote_size(MPI_Comm comm, int *size) MPICH_API_PUBLIC;
 int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group) MPICH_API_PUBLIC;
+int MPI_Comm_create_endpoints(MPI_Comm comm, int my_num_ep,
+                              MPI_Info info,MPI_Comm newcomm[]) MPICH_API_PUBLIC;
 int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader, MPI_Comm peer_comm,
                          int remote_leader, int tag, MPI_Comm *newintercomm) MPICH_API_PUBLIC;
 int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm) MPICH_API_PUBLIC;
@@ -1728,6 +1732,8 @@ int PMPI_Comm_free(MPI_Comm *comm) MPICH_API_PUBLIC;
 int PMPI_Comm_test_inter(MPI_Comm comm, int *flag) MPICH_API_PUBLIC;
 int PMPI_Comm_remote_size(MPI_Comm comm, int *size) MPICH_API_PUBLIC;
 int PMPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group) MPICH_API_PUBLIC;
+int PMPI_Comm_create_endpoints(MPI_Comm comm, int my_num_ep,
+                               MPI_Info info,MPI_Comm newcomm[]) MPICH_API_PUBLIC;
 int PMPI_Intercomm_create(MPI_Comm local_comm, int local_leader, MPI_Comm peer_comm,
                           int remote_leader, int tag, MPI_Comm *newintercomm) MPICH_API_PUBLIC;
 int PMPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm) MPICH_API_PUBLIC;

@@ -98,6 +98,7 @@ my $line_limit = 80; # Max line length
          'MPI_Datatype[]' => 'INTEGER %name%(*)',
          'MPI_Comm' => 'INTEGER',
          'MPI_Comm*' => 'INTEGER', # Never an array of comm
+         'MPI_Comm[]' => 'INTEGER %name%(*)',
          'MPI_Group' => 'INTEGER',
          'MPI_Group*' => 'INTEGER', # Never an array of groups
          'MPI_Errhandler' => 'INTEGER',

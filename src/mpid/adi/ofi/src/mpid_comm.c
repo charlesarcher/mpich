@@ -171,7 +171,11 @@ __SI__ void dup_vcrt(struct MPIDI_VCRT *src_vcrt,
   }
   if (mapper->type == MPIR_COMM_MAP_TYPE__ENDPOINT) {
     for (i = 0; i < mapper->src_mapping_size;i++)
+#ifdef MPIDI_USE_SCALABLE_ENDPOINTS
       (*dest_vcrt)->vcr_table[i].ep_idx  = mapper->ep_mapping[i];
+#else
+    MPIR_Assert(mapper->ep_mapping[i] == 0);
+#endif
   }
 
 fn_exit:
@@ -403,8 +407,9 @@ __ADI_INLINE__ int MPIDI_Comm_free_hook(MPIR_Comm *comm)
   int mpi_errno = MPI_SUCCESS;
 
   BEGIN_FUNC(FCNAME);
-
-  MPIDI_Map_erase(MPIDI_Global.comm_map,comm->context_id);
+  uint64_t mapid;
+  mapid = (((uint64_t)COMM_TO_EP(comm,comm->rank))<<32) | comm->context_id;
+  MPIDI_Map_erase(MPIDI_Global.comm_map,mapid);
   MPIDI_Map_destroy(COMM_OFI(comm)->huge_send_counters);
   MPIDI_Map_destroy(COMM_OFI(comm)->huge_recv_counters);
 

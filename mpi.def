@@ -75,6 +75,8 @@ EXPORTS
 	MPI_Comm_connect
 	PMPI_Comm_create
 	MPI_Comm_create
+	PMPI_Comm_create_endpoints
+	MPI_Comm_create_endpoints
 	PMPI_Comm_create_errhandler
 	MPI_Comm_create_errhandler
 	PMPI_Comm_create_keyval
