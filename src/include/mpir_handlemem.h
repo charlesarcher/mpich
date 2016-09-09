@@ -72,7 +72,7 @@ static inline int MPIR_check_handles_on_finalize(void *objmem_ptr)
         else {
             void **indirect = (void **) objmem->indirect;
             for (i = 0; i < objmem->indirect_size; i++) {
-                char *start = indirect[i];
+                char *start = (char*)indirect[i];
                 char *end = start + HANDLE_NUM_INDICES * objmem->size;
                 if ((char *) ptr >= start && (char *) ptr < end) {
                     nIndirect[i]++;
@@ -91,7 +91,7 @@ static inline int MPIR_check_handles_on_finalize(void *objmem_ptr)
                 }
             }
         }
-        ptr = ptr->next;
+        ptr = (MPIR_Handle_common*)ptr->next;
     }
 
     if (0) {
@@ -170,7 +170,8 @@ static inline int MPIR_check_handles_on_finalize(void *objmem_ptr)
 */
 
 /* This routine is called by finalize when MPI exits */
-static inline int MPIR_Handle_free(void *((*indirect)[]), int indirect_size)
+typedef void** MPIR_Handle_indirect_type;
+static inline int MPIR_Handle_free(MPIR_Handle_indirect_type indirect[], int indirect_size)
 {
     int i;
 
@@ -231,7 +232,7 @@ static inline void *MPIR_Handle_direct_init(void *direct,
 }
 
 /* indirect is really a pointer to a pointer to an array of pointers */
-static inline void *MPIR_Handle_indirect_init(void *(**indirect)[],
+static inline void *MPIR_Handle_indirect_init(MPIR_Handle_indirect_type *indirect[],
                                               int *indirect_size,
                                               int indirect_num_blocks,
                                               int indirect_num_indices,
@@ -246,7 +247,7 @@ static inline void *MPIR_Handle_indirect_init(void *(**indirect)[],
     /* Create the table */
     if (!*indirect) {
         /* printf("Creating indirect table with %d pointers to blocks in it\n", indirect_num_blocks); */
-        *indirect = (void *) MPL_calloc(indirect_num_blocks, sizeof(void *));
+        *indirect = (MPIR_Handle_indirect_type *) MPL_calloc(indirect_num_blocks, sizeof(void *));
         if (!*indirect) {
             return 0;
         }
@@ -290,7 +291,7 @@ static inline int MPIR_Handle_finalize(void *objmem_ptr)
 {
     MPIR_Object_alloc_t *objmem = (MPIR_Object_alloc_t *) objmem_ptr;
 
-    (void) MPIR_Handle_free(objmem->indirect, objmem->indirect_size);
+    (void) MPIR_Handle_free((MPIR_Handle_indirect_type*)objmem->indirect, objmem->indirect_size);
     /* This does *not* remove any Info objects that the user created
      * and then did not destroy */
 
@@ -348,7 +349,7 @@ static inline void *MPIR_Handle_obj_alloc_unsafe(MPIR_Object_alloc_t * objmem)
 
     if (objmem->avail) {
         ptr = objmem->avail;
-        objmem->avail = objmem->avail->next;
+        objmem->avail = (MPIR_Handle_common*)objmem->avail->next;
         /* We do not clear ptr->next as we set it to an invalid pattern
          * when doing memory debugging and we don't need to set it
          * for the production/default case */
@@ -367,9 +368,11 @@ static inline void *MPIR_Handle_obj_alloc_unsafe(MPIR_Object_alloc_t * objmem)
              * jobs do not need to include any of the Info code if no
              * Info-using routines are used */
             objmem->initialized = 1;
-            ptr = MPIR_Handle_direct_init(objmem->direct, objmem->direct_size, objsize, objkind);
+            ptr = (MPIR_Handle_common*)MPIR_Handle_direct_init(objmem->direct,
+                                                               objmem->direct_size,
+                                                               objsize, objkind);
             if (ptr) {
-                objmem->avail = ptr->next;
+                objmem->avail = (MPIR_Handle_common*)ptr->next;
             }
 
 #ifdef MPICH_DEBUG_HANDLEALLOC
@@ -385,12 +388,14 @@ static inline void *MPIR_Handle_obj_alloc_unsafe(MPIR_Object_alloc_t * objmem)
         else {
             /* no space left in direct block; setup the indirect block. */
 
-            ptr = MPIR_Handle_indirect_init(&objmem->indirect,
-                                            &objmem->indirect_size,
-                                            HANDLE_NUM_BLOCKS,
-                                            HANDLE_NUM_INDICES, objsize, objkind);
+            ptr = (MPIR_Handle_common*)
+                MPIR_Handle_indirect_init((MPIR_Handle_indirect_type**)&objmem->indirect,
+                                          &objmem->indirect_size,
+                                          HANDLE_NUM_BLOCKS,
+                                          HANDLE_NUM_INDICES,
+                                          objsize, objkind);
             if (ptr) {
-                objmem->avail = ptr->next;
+                objmem->avail = (MPIR_Handle_common*)ptr->next;
             }
 
             /* ptr points to object to allocate */

@@ -48,6 +48,7 @@ noinst_HEADERS +=                   \
     src/include/mpir_comm.h         \
     src/include/mpir_debugger.h     \
     src/include/mpir_request.h      \
+    src/include/mpir_request_post.h \
     src/include/mpir_status.h       \
     src/include/mpir_contextid.h    \
     src/include/mpir_objects.h      \
