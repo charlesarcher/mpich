@@ -211,7 +211,8 @@
 
 #define MPIDI_OFI_DO_SEND        0
 #define MPIDI_OFI_DO_INJECT      1
-#define MPIDI_OFI_NUM_CQ_ENTRIES 8
+#define MPIDI_OFI_NUM_CQ_ENTRIES 4
+#define MPIDI_OFI_LOOP_PROGRESS  100
 
 /* Typedefs */
 enum {
