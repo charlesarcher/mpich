@@ -20,23 +20,26 @@ MPL_STATIC_INLINE_PREFIX
 {
     int mpi_errno;
     struct fi_cq_tagged_entry wc[MPIDI_OFI_NUM_CQ_ENTRIES];
+    int thresh = MPIDI_OFI_LOOP_PROGRESS;
     ssize_t ret;
 
     MPID_THREAD_CS_ENTER(POBJ, MPIDI_OFI_THREAD_FI_MUTEX);
 
-    if (unlikely(MPIDI_OFI_get_buffered(wc, 1)))
-        mpi_errno = MPIDI_OFI_handle_cq_entries(wc, 1, 1);
-    else if (likely(1)) {
-        ret = fi_cq_read(MPIDI_Global.p2p_cq, (void *) wc, MPIDI_OFI_NUM_CQ_ENTRIES);
-
-        if (likely(ret > 0))
-            mpi_errno = MPIDI_OFI_handle_cq_entries(wc, ret, 0);
-        else if (ret == -FI_EAGAIN)
-            mpi_errno = MPI_SUCCESS;
-        else
-            mpi_errno = MPIDI_OFI_handle_cq_error(ret);
+    while (thresh--) {
+        if (unlikely(MPIDI_OFI_get_buffered(wc, 1)))
+            mpi_errno = MPIDI_OFI_handle_cq_entries(wc, 1, 1);
+        else if (likely(1)) {
+            ret = fi_cq_read(MPIDI_Global.p2p_cq, (void *) wc, MPIDI_OFI_NUM_CQ_ENTRIES);
+            if (likely(ret > 0))
+                mpi_errno = MPIDI_OFI_handle_cq_entries(wc, ret, 0);
+            else if (ret == -FI_EAGAIN) {
+                mpi_errno = MPI_SUCCESS;
+                thresh = 0;
+            }
+            else
+                mpi_errno = MPIDI_OFI_handle_cq_error(ret);
+        }
     }
-
     MPID_THREAD_CS_EXIT(POBJ, MPIDI_OFI_THREAD_FI_MUTEX);
 
     MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
