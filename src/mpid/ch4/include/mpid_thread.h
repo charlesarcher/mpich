@@ -21,7 +21,9 @@ typedef MPIDU_Thread_id_t MPID_Thread_id_t;
 typedef MPIDU_Thread_tls_t MPID_Thread_tls_t;
 typedef MPIDU_Thread_func_t MPID_Thread_func_t;
 
-#ifdef MPIDI_CH4_USE_TICKET_LOCK
+#define MPIDI_CH4_USE_TICKET_LOCK 1
+#if MPIDI_CH4_USE_TICKET_LOCK && (MPICH_THREAD_GRANULARITY != MPICH_THREAD_GRANULARITY__SINGLE)
+
 #include "mpid_ticketlock.h"
 typedef MPIDI_CH4_Ticket_lock MPID_Thread_mutex_t;
 #define MPID_THREAD_CS_ENTER       MPIDI_CH4I_THREAD_CS_ENTER
