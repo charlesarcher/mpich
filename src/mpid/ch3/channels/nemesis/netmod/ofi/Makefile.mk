@@ -14,6 +14,9 @@ mpi_core_sources +=                                 		\
     src/mpid/ch3/channels/nemesis/netmod/ofi/ofi_data.c	 	\
     src/mpid/ch3/channels/nemesis/netmod/ofi/ofi_progress.c
 
+external_subdirs   += @ofisrcdir@
+pmpi_convenience_libs += @ofilib@
+
 errnames_txt_files += src/mpid/ch3/channels/nemesis/netmod/ofi/errnames.txt
 
 endif
