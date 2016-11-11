@@ -19,6 +19,10 @@ extern char *strdup(const char *);
 char *MPL_strdup(const char *str);
 #endif /* defined(MPL_USE_MEMORY_TRACING) || defined(MPL_HAVE_STRDUP) */
 
+#ifdef HAVE__BOOL
+#include <stdbool.h>
+#endif
+
 #ifdef MPL_USE_MEMORY_TRACING
 /*M
   MPL_malloc - Allocate memory
