@@ -447,6 +447,45 @@ typedef struct {
     size_t buf_limit_left;
 } MPIDI_OFI_iovec_state_t;
 
+typedef struct MPIDI_OFI_seg_state_t {
+    DLOOP_Count   buf_limit;
+    DLOOP_Count   buf_limit_left;
+
+    MPID_Segment  origin_seg;
+    size_t        origin_cursor;
+    size_t        origin_end;
+    size_t        origin_iov_len;
+    size_t        origin_idx;
+    DLOOP_VECTOR  origin_iov;
+    uintptr_t     origin_addr;
+    int           origin_iov_done;
+
+    MPID_Segment  target_seg;
+    size_t        target_cursor;
+    size_t        target_end;
+    size_t        target_iov_len;
+    size_t        target_idx;
+    DLOOP_VECTOR  target_iov;
+    uintptr_t     target_addr;
+    int           target_iov_done;
+
+    MPID_Segment  result_seg;
+    size_t        result_cursor;
+    size_t        result_end;
+    size_t        result_iov_len;
+    size_t        result_idx;
+    DLOOP_VECTOR  result_iov;
+    uintptr_t     result_addr;
+    int           result_iov_done;
+
+}MPIDI_OFI_seg_state_t;
+
+typedef enum MPIDI_OFI_Segment_side_t {
+    MPIDI_OFI_SEGMENT_ORIGIN=0,
+    MPIDI_OFI_SEGMENT_TARGET,
+    MPIDI_OFI_SEGMENT_RESULT,
+} MPIDI_OFI_Segment_side_t;
+
 typedef struct {
     MPIR_Datatype *pointer;
     MPI_Datatype type;
@@ -454,9 +493,6 @@ typedef struct {
     int contig;
     MPI_Aint true_lb;
     size_t size;
-    int num_contig;
-    DLOOP_VECTOR *map;
-    DLOOP_VECTOR __map;
 } MPIDI_OFI_win_datatype_t;
 
 typedef struct {
