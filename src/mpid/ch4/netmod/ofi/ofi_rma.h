@@ -487,10 +487,10 @@ static inline int MPIDI_OFI_do_put(const void *origin_addr,
                              INT64_MAX,
                              origin_datatype,
                              target_datatype);
-    rc = MPIDI_OFI_IOV_EAGAIN;
+    rc = MPIDI_OFI_SEG_EAGAIN;
 
     size_t cur_o = 0, cur_t = 0;
-    while (rc == MPIDI_OFI_IOV_EAGAIN) {
+    while (rc == MPIDI_OFI_SEG_EAGAIN) {
         originv = &req->noncontig->buf.iov.put_get.originv[cur_o];
         targetv = &req->noncontig->buf.iov.put_get.targetv[cur_t];
         omax = MPIDI_Global.iov_limit;
@@ -499,14 +499,14 @@ static inline int MPIDI_OFI_do_put(const void *origin_addr,
         rc = MPIDI_OFI_merge_segment(&p, originv, omax,
                                      targetv,tmax, &oout,
                                      &tout);
-        if (rc == MPIDI_OFI_IOV_DONE)
+        if (rc == MPIDI_OFI_SEG_DONE)
             break;
 
         cur_o += oout;
         cur_t += tout;
         for (i = 0; i < tout; i++)
             targetv[i].key = MPIDI_OFI_winfo_mr_key(win, target_rank);
-        MPIR_Assert(rc != MPIDI_OFI_IOV_ERROR);
+        MPIR_Assert(rc != MPIDI_OFI_SEG_ERROR);
         msg.msg_iov = originv;
         msg.iov_count = oout;
         msg.rma_iov = targetv;
@@ -640,10 +640,10 @@ static inline int MPIDI_OFI_do_get(void *origin_addr,
                              INT64_MAX,
                              origin_datatype,
                              target_datatype);
-    rc = MPIDI_OFI_IOV_EAGAIN;
+    rc = MPIDI_OFI_SEG_EAGAIN;
 
     size_t cur_o = 0, cur_t = 0;
-    while (rc == MPIDI_OFI_IOV_EAGAIN) {
+    while (rc == MPIDI_OFI_SEG_EAGAIN) {
         originv = &req->noncontig->buf.iov.put_get.originv[cur_o];
         targetv = &req->noncontig->buf.iov.put_get.targetv[cur_t];
         omax = MPIDI_Global.iov_limit;
@@ -653,12 +653,12 @@ static inline int MPIDI_OFI_do_get(void *origin_addr,
                                      targetv,tmax, &oout,
                                      &tout);
 
-        if (rc == MPIDI_OFI_IOV_DONE)
+        if (rc == MPIDI_OFI_SEG_DONE)
             break;
 
         cur_o += oout;
         cur_t += tout;
-        MPIR_Assert(rc != MPIDI_OFI_IOV_ERROR);
+        MPIR_Assert(rc != MPIDI_OFI_SEG_ERROR);
 
         for (i = 0; i < tout; i++)
             targetv[i].key = MPIDI_OFI_winfo_mr_key(win, target_rank);
@@ -1025,10 +1025,10 @@ static inline int MPIDI_OFI_do_accumulate(const void *origin_addr,
     msg.data = 0;
     msg.datatype = fi_dt;
     msg.op = fi_op;
-    rc = MPIDI_OFI_IOV_EAGAIN;
+    rc = MPIDI_OFI_SEG_EAGAIN;
 
     size_t cur_o = 0, cur_t = 0;
-    while (rc == MPIDI_OFI_IOV_EAGAIN) {
+    while (rc == MPIDI_OFI_SEG_EAGAIN) {
         originv = &req->noncontig->buf.iov.accumulate.originv[cur_o];
         targetv = &req->noncontig->buf.iov.accumulate.targetv[cur_t];
         omax = MPIDI_Global.iov_limit;
@@ -1037,10 +1037,10 @@ static inline int MPIDI_OFI_do_accumulate(const void *origin_addr,
                                      (struct fi_rma_iov *)targetv,tmax, &oout,
                                      &tout);
 
-        if (rc == MPIDI_OFI_IOV_DONE)
+        if (rc == MPIDI_OFI_SEG_DONE)
             break;
 
-        MPIR_Assert(rc != MPIDI_OFI_IOV_ERROR);
+        MPIR_Assert(rc != MPIDI_OFI_SEG_ERROR);
 
         cur_o += oout;
         cur_t += tout;
@@ -1172,10 +1172,10 @@ static inline int MPIDI_OFI_do_get_accumulate(const void *origin_addr,
     msg.data = 0;
     msg.datatype = fi_dt;
     msg.op = fi_op;
-    rc = MPIDI_OFI_IOV_EAGAIN;
+    rc = MPIDI_OFI_SEG_EAGAIN;
 
     size_t cur_o = 0, cur_t = 0, cur_r = 0;
-    while (rc == MPIDI_OFI_IOV_EAGAIN) {
+    while (rc == MPIDI_OFI_SEG_EAGAIN) {
         originv = &req->noncontig->buf.iov.get_accumulate.originv[cur_o];
         targetv = &req->noncontig->buf.iov.get_accumulate.targetv[cur_t];
         resultv = &req->noncontig->buf.iov.get_accumulate.resultv[cur_r];
@@ -1193,10 +1193,10 @@ static inline int MPIDI_OFI_do_get_accumulate(const void *origin_addr,
                                          rmax, (struct fi_rma_iov *) targetv, tmax, &rout, &tout);
         }
 
-        if (rc == MPIDI_OFI_IOV_DONE)
+        if (rc == MPIDI_OFI_SEG_DONE)
             break;
 
-        MPIR_Assert(rc != MPIDI_OFI_IOV_ERROR);
+        MPIR_Assert(rc != MPIDI_OFI_SEG_ERROR);
 
         cur_o += oout;
         cur_t += tout;
