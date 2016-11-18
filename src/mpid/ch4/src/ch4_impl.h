@@ -290,6 +290,25 @@ MPL_STATIC_INLINE_PREFIX void MPIDI_CH4U_request_complete(MPIR_Request * req)
         }                                                               \
     } while (0)
 
+#define MPIDI_Datatype_check_size_lb(_datatype,_count,_data_sz_out,     \
+                                     _dt_true_lb)                       \
+    do {                                                                \
+        if (IS_BUILTIN(_datatype))                                      \
+        {                                                               \
+            (_data_sz_out)   = (size_t)(_count) *                       \
+                MPID_Datatype_get_basic_size(_datatype);                \
+            (_dt_true_lb)    = 0;                                       \
+        }                                                               \
+        else                                                            \
+        {                                                               \
+            MPIR_Datatype *_dt_ptr;                                     \
+            MPID_Datatype_get_ptr((_datatype), (_dt_ptr));              \
+            (_data_sz_out)   = (_dt_ptr) ? (size_t)(_count) *           \
+                (_dt_ptr)->size : 0;                                    \
+            (_dt_true_lb)    = (_dt_ptr) ? (_dt_ptr)->true_lb:0;        \
+        }                                                               \
+    } while (0)
+
 #define MPIDI_Datatype_check_contig_size_lb(_datatype,_count,           \
                                             _dt_contig_out,             \
                                             _data_sz_out,               \

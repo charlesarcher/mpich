@@ -262,25 +262,6 @@ static inline int MPIDI_OFI_query_datatype(MPI_Datatype dt,
     return rc;
 }
 
-
-static inline void MPIDI_OFI_win_datatype_basic(int count,
-                                                MPI_Datatype datatype,
-                                                MPIDI_OFI_win_datatype_t * dt)
-{
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_OFI_WIN_DATATYPE_BASIC);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_OFI_WIN_DATATYPE_BASIC);
-
-    if (datatype != MPI_DATATYPE_NULL)
-        MPIDI_Datatype_get_info(dt->count = count,
-                                dt->type = datatype,
-                                dt->contig, dt->size, dt->pointer, dt->true_lb);
-    else
-        memset(dt, 0, sizeof(*dt));
-
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_OFI_WIN_DATATYPE_BASIC);
-}
-
-
 MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_allocate_win_request_put_get(MPIR_Win * win,
                                                                     int origin_count,
                                                                     int target_count,
@@ -312,17 +293,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_allocate_win_request_put_get(MPIR_Win * w
     req->noncontig->buf.iov.put_get.targetv =
         (struct fi_rma_iov *) &req->noncontig->buf.iov_store[o_size * alloc_iovs];
     MPIDI_OFI_INIT_SIGNAL_REQUEST(win, sigreq, flags, ep);
-    MPIDI_OFI_win_datatype_basic(origin_count, origin_datatype, &req->noncontig->origin_dt);
-    MPIDI_OFI_win_datatype_basic(target_count, target_datatype, &req->noncontig->target_dt);
-    MPIR_ERR_CHKANDJUMP((req->noncontig->origin_dt.size != req->noncontig->target_dt.size),
-                        mpi_errno, MPI_ERR_SIZE, "**rmasize");
 
     req->target_rank = target_rank;
-  fn_exit:
+
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_OFI_ALLOCATE_WIN_REQUEST_PUT_GET);
     return mpi_errno;
-  fn_fail:
-    goto fn_exit;
 }
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_allocate_win_request_accumulate(MPIR_Win * win,
@@ -357,17 +332,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_allocate_win_request_accumulate(MPIR_Win 
     req->noncontig->buf.iov.accumulate.targetv =
         (struct fi_rma_ioc *) &req->noncontig->buf.iov_store[o_size * alloc_iovs];
     MPIDI_OFI_INIT_SIGNAL_REQUEST(win, sigreq, flags, ep);
-    MPIDI_OFI_win_datatype_basic(origin_count, origin_datatype, &req->noncontig->origin_dt);
-    MPIDI_OFI_win_datatype_basic(target_count, target_datatype, &req->noncontig->target_dt);
-    MPIR_ERR_CHKANDJUMP((req->noncontig->origin_dt.size != req->noncontig->target_dt.size),
-                        mpi_errno, MPI_ERR_SIZE, "**rmasize");
-
     req->target_rank = target_rank;
-  fn_exit:
+
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_OFI_ALLOCATE_WIN_REQUEST_ACCUMULATE);
     return mpi_errno;
-  fn_fail:
-    goto fn_exit;
 }
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_allocate_win_request_get_accumulate(MPIR_Win * win,
@@ -416,21 +384,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_allocate_win_request_get_accumulate(MPIR_
         (struct fi_ioc *) &req->noncontig->buf.iov_store[o_size * alloc_iovs +
                                                          t_size * alloc_rma_iovs];
     MPIDI_OFI_INIT_SIGNAL_REQUEST(win, sigreq, flags, ep);
-    MPIDI_OFI_win_datatype_basic(origin_count, origin_datatype, &req->noncontig->origin_dt);
-    MPIDI_OFI_win_datatype_basic(target_count, target_datatype, &req->noncontig->target_dt);
-    MPIDI_OFI_win_datatype_basic(result_count, result_datatype, &req->noncontig->result_dt);
-
-    MPIR_ERR_CHKANDJUMP((req->noncontig->origin_dt.size != req->noncontig->target_dt.size &&
-                         op != MPI_NO_OP), mpi_errno, MPI_ERR_SIZE, "**rmasize");
-    MPIR_ERR_CHKANDJUMP((req->noncontig->result_dt.size != req->noncontig->target_dt.size),
-                        mpi_errno, MPI_ERR_SIZE, "**rmasize");
 
     req->target_rank = target_rank;
-  fn_exit:
+
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_OFI_ALLOCATE_WIN_REQUEST_GET_ACCUMULATE);
     return mpi_errno;
-  fn_fail:
-    goto fn_exit;
 }
 
 
@@ -690,8 +648,8 @@ static inline int MPIDI_NM_mpi_get(void *origin_addr,
                                    int target_count, MPI_Datatype target_datatype, MPIR_Win * win)
 {
     int origin_contig, target_contig, mpi_errno = MPI_SUCCESS;
-    MPIDI_OFI_win_datatype_t origin_dt, target_dt;
-    size_t origin_bytes;
+    MPI_Aint origin_true_lb, target_true_lb;
+    size_t origin_bytes, target_bytes;
     size_t offset;
     struct fi_rma_iov riov;
     struct iovec iov;
@@ -703,7 +661,8 @@ static inline int MPIDI_NM_mpi_get(void *origin_addr,
     MPIDI_CH4U_EPOCH_CHECK_SYNC(win, mpi_errno, goto fn_fail);
     MPIDI_CH4U_EPOCH_START_CHECK(win, mpi_errno, goto fn_fail);
 
-    MPIDI_Datatype_check_contig_size(origin_datatype, origin_count, origin_contig, origin_bytes);
+    MPIDI_Datatype_check_contig_size_lb(origin_datatype, origin_count, origin_contig,
+                                        origin_bytes, origin_true_lb);
 
     if (unlikely((origin_bytes == 0) || (target_rank == MPI_PROC_NULL)))
         goto fn_exit;
@@ -714,17 +673,12 @@ static inline int MPIDI_NM_mpi_get(void *origin_addr,
                                    target_count,
                                    target_datatype, origin_addr, origin_count, origin_datatype);
     }
-
-    MPIDI_Datatype_check_contig(origin_datatype, origin_contig);
-    MPIDI_Datatype_check_contig(target_datatype, target_contig);
+    MPIDI_Datatype_check_contig_size_lb(target_datatype, target_count, target_contig,
+                                        target_bytes, target_true_lb);
+    MPIR_ERR_CHKANDJUMP((origin_bytes != target_bytes),mpi_errno, MPI_ERR_SIZE, "**rmasize");
 
     if (origin_contig && target_contig) {
         offset = target_disp * MPIDI_OFI_winfo_disp_unit(win, target_rank);
-        MPIDI_OFI_win_datatype_basic(origin_count, origin_datatype, &origin_dt);
-        MPIDI_OFI_win_datatype_basic(target_count, target_datatype, &target_dt);
-        MPIR_ERR_CHKANDJUMP((origin_dt.size != target_dt.size),
-                            mpi_errno, MPI_ERR_SIZE, "**rmasize");
-
         msg.desc = NULL;
         msg.msg_iov = &iov;
         msg.iov_count = 1;
@@ -733,11 +687,11 @@ static inline int MPIDI_NM_mpi_get(void *origin_addr,
         msg.rma_iov_count = 1;
         msg.context = NULL;
         msg.data = 0;
-        iov.iov_base = (char *) origin_addr + origin_dt.true_lb;
-        iov.iov_len = target_dt.size;
+        iov.iov_base = (char *) origin_addr + origin_true_lb;
+        iov.iov_len = target_bytes;
         riov.addr =
-            (uint64_t) (MPIDI_OFI_winfo_base(win, target_rank) + offset + target_dt.true_lb);
-        riov.len = target_dt.size;
+            (uint64_t) (MPIDI_OFI_winfo_base(win, target_rank) + offset + target_true_lb);
+        riov.len = target_bytes;
         riov.key = MPIDI_OFI_winfo_mr_key(win, target_rank);
         MPIDI_OFI_CALL_RETRY2(MPIDI_OFI_win_cntr_incr(win),
                               fi_readmsg(MPIDI_OFI_WIN(win).ep_nocmpl, &msg, 0), rdma_write);
@@ -826,8 +780,8 @@ static inline int MPIDI_NM_mpi_compare_and_swap(const void *origin_addr,
     int mpi_errno = MPI_SUCCESS;
     enum fi_op fi_op;
     enum fi_datatype fi_dt;
-    MPIDI_OFI_win_datatype_t origin_dt, target_dt, result_dt;
-    size_t offset, max_size, dt_size;
+    size_t offset, max_size, dt_size, bytes;
+    MPI_Aint true_lb;
     void *buffer, *tbuffer, *rbuffer;
     struct fi_ioc originv, resultv, comparev;
     struct fi_rma_ioc targetv;
@@ -840,15 +794,13 @@ static inline int MPIDI_NM_mpi_compare_and_swap(const void *origin_addr,
 
     offset = target_disp * MPIDI_OFI_winfo_disp_unit(win, target_rank);
 
-    MPIDI_OFI_win_datatype_basic(1, datatype, &origin_dt);
-    MPIDI_OFI_win_datatype_basic(1, datatype, &result_dt);
-    MPIDI_OFI_win_datatype_basic(1, datatype, &target_dt);
+    MPIDI_Datatype_check_size_lb(datatype, 1, bytes, true_lb);
 
-    if ((origin_dt.size == 0) || (target_rank == MPI_PROC_NULL))
+    if ((bytes == 0) || (target_rank == MPI_PROC_NULL))
         goto fn_exit;
 
-    buffer = (char *) origin_addr + origin_dt.true_lb;
-    rbuffer = (char *) result_addr + result_dt.true_lb;
+    buffer = (char *) origin_addr + true_lb;
+    rbuffer = (char *) result_addr + true_lb;
     tbuffer = (void *) (MPIDI_OFI_winfo_base(win, target_rank) + offset);
 
     MPIDI_CH4U_EPOCH_START_CHECK(win, mpi_errno, goto fn_fail);
