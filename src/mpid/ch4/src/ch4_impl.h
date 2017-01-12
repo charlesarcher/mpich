@@ -746,4 +746,214 @@ static inline void MPIDI_win_check_group_local_completed(MPIR_Win * win,
     }
 }
 
+#ifdef MPIDI_CH4U_PERF_PROFILE
+
+#if defined(__ICC) || defined(__INTEL_COMPILER)
+#include "immintrin.h"
+#endif
+
+static inline int
+MPIDI_CH4I_Perf_profile_rdpmc_open_attr(struct perf_event_attr *attr,
+                                        struct rdpmc_ctx *ctx,
+                                        struct rdpmc_ctx *leader_ctx)
+{
+	ctx->fd = syscall(__NR_perf_event_open, attr, 0, -1, 
+			  leader_ctx ? leader_ctx->fd : -1, 0);
+	if (ctx->fd < 0) {
+		perror("perf_event_open");
+		return -1;
+	}
+	ctx->buf = mmap(NULL, sysconf(_SC_PAGESIZE), PROT_READ, MAP_SHARED, ctx->fd, 0);
+	if (ctx->buf == MAP_FAILED) {
+		close(ctx->fd);
+		perror("mmap on perf fd");
+		return -1;
+	}
+	return 0;
+}
+
+static inline int
+MPIDI_CH4I_Perf_profile_rdpmc_open(unsigned counter,
+                                   struct rdpmc_ctx *ctx)
+{
+	struct perf_event_attr attr = {
+		.type = counter > 10 ? PERF_TYPE_RAW : PERF_TYPE_HARDWARE,
+		.size = PERF_ATTR_SIZE_VER0,
+		.config = counter,
+		.sample_type = PERF_SAMPLE_READ,
+		.exclude_kernel = 1,
+	};
+
+	return MPIDI_CH4I_Perf_profile_rdpmc_open_attr(&attr, ctx, NULL);
+}
+
+static inline void
+MPIDI_CH4I_Perf_profile_rdpmc_close(struct rdpmc_ctx *ctx)
+{
+	close(ctx->fd);
+	munmap(ctx->buf, sysconf(_SC_PAGESIZE));
+}
+
+static inline uint64_t
+MPIDI_CH4I_Perf_profile_rdpmc_read(struct rdpmc_ctx *ctx)
+{
+    uint64_t val;
+    uint64_t offset; 
+
+    uint32_t seq;
+        
+    typeof (ctx->buf) buf = ctx->buf;
+
+    do {
+        seq = buf->lock;
+        asm volatile("" ::: "memory");
+
+#if defined(__ICC) || defined(__INTEL_COMPILER)
+            val = _rdpmc(buf->index - 1);
+#else /* GCC */
+            val = __builtin_ia32_rdpmc(buf->index - 1);
+#endif 
+            offset = buf->offset;
+            asm volatile("" ::: "memory");
+    } while (buf->lock != seq);
+
+    return val + offset;
+}
+
+static inline void
+MPIDI_CH4U_Perf_profile_init(void)
+{
+    int rdpmc_retval;
+
+    struct rdpmc_ctx *leader = NULL;
+
+    int env_result    = 1;
+    char * env_type   = NULL;
+    char * env_config = NULL;
+
+    env_type = getenv("MPIDI_CH4_RDPMC_PERF_TYPE");
+
+    if (env_type)
+    {
+        MPIDI_CH4_Global.perf_profile_rdpmc_type = (uint32_t)strtoll(env_type, NULL, 16);
+    }
+    else
+    {
+        env_result = 0;
+    }
+
+    env_config = getenv("MPIDI_CH4_RDPMC_PERF_CONFIG");
+
+    if (env_config)
+    {
+        MPIDI_CH4_Global.perf_profile_rdpmc_config = (int)strtoll(env_config, NULL, 16);
+    }
+    else
+    {
+        env_result = 0;
+    }
+
+    if (env_result != 1)
+    {
+        MPIDI_CH4_Global.perf_profile_rdpmc_type   = RDPMC_PERF_DEFAULT_TYPE;
+        MPIDI_CH4_Global.perf_profile_rdpmc_config = RDPMC_PERF_DEFAULT_CONFIG;
+    }
+
+    struct perf_event_attr attr = {
+        .type        = MPIDI_CH4_Global.perf_profile_rdpmc_type,
+        .size        = sizeof(struct perf_event_attr),
+        .config      = MPIDI_CH4_Global.perf_profile_rdpmc_config,
+        .sample_type = PERF_SAMPLE_READ,
+    };
+
+    rdpmc_retval = MPIDI_CH4I_Perf_profile_rdpmc_open_attr(&attr,
+                                                           &MPIDI_CH4_Global.perf_profile_rdpmc_ctx,
+                                                           leader);
+
+    if (rdpmc_retval < 0)
+    {
+        fprintf(stderr, "Unable to initialize RDPMC. Error: %d\n", rdpmc_retval);
+        exit(-1);
+    }
+
+    int i;
+
+    for (i = 0; i < RDPMC_PERF_MAX_SLOT_NUMBER; i++)
+    {
+        MPIDI_CH4_Global.perf_profile_rdpmc_begin[i]  = 0;
+        MPIDI_CH4_Global.perf_profile_rdpmc_summ[i]   = 0;
+        MPIDI_CH4_Global.perf_profile_rdpmc_number[i] = 0;
+        MPIDI_CH4_Global.perf_profile_rdpmc_slot_name[i][0] = '\0';
+    }
+}
+
+static inline void
+MPIDI_CH4U_Perf_profile_finalize(void)
+{
+    return MPIDI_CH4I_Perf_profile_rdpmc_close(&MPIDI_CH4_Global.perf_profile_rdpmc_ctx);
+}
+
+static inline void
+MPIDI_CH4U_Perf_profile_reset_counters(void)
+{
+    int i;
+
+    for (i = 0; i < RDPMC_PERF_MAX_SLOT_NUMBER; i++)
+    {
+        MPIDI_CH4_Global.perf_profile_rdpmc_begin[i]  = 0;
+        MPIDI_CH4_Global.perf_profile_rdpmc_summ[i]   = 0;
+        MPIDI_CH4_Global.perf_profile_rdpmc_number[i] = 0;
+    }
+}
+
+static inline void
+MPIDI_CH4U_Perf_profile_set_slot_name(uint32_t slot_number, char * slot_name)
+{
+    strncpy(MPIDI_CH4_Global.perf_profile_rdpmc_slot_name[slot_number],
+            slot_name,
+            RDPMC_PERF_MAX_SLOT_NAME - 1);
+
+    MPIDI_CH4_Global.perf_profile_rdpmc_slot_name[slot_number][RDPMC_PERF_MAX_SLOT_NAME - 1] = '\0';
+}
+
+static inline void
+MPIDI_CH4U_Perf_profile_begin(uint32_t slot_number)
+{
+    MPIDI_CH4_Global.perf_profile_rdpmc_begin[slot_number] =
+        MPIDI_CH4I_Perf_profile_rdpmc_read(&MPIDI_CH4_Global.perf_profile_rdpmc_ctx);
+}
+
+static inline void
+MPIDI_CH4U_Perf_profile_end(uint32_t slot_number)
+{
+    MPIDI_CH4_Global.perf_profile_rdpmc_summ[slot_number] +=
+        (MPIDI_CH4I_Perf_profile_rdpmc_read(&MPIDI_CH4_Global.perf_profile_rdpmc_ctx) -
+        MPIDI_CH4_Global.perf_profile_rdpmc_begin[slot_number]);
+
+    MPIDI_CH4_Global.perf_profile_rdpmc_number[slot_number]++;
+}
+
+static inline void
+MPIDI_CH4U_Perf_profile_dump(FILE * stream)
+{
+    int i;
+
+    for (i = 0; i < RDPMC_PERF_MAX_SLOT_NUMBER; i++)
+    {
+        if (MPIDI_CH4_Global.perf_profile_rdpmc_slot_name[i][0])
+        {
+            fprintf(stream, "RDPMC [%s] (%x, %04x) average = %g (%llu times)\n",
+                    MPIDI_CH4_Global.perf_profile_rdpmc_slot_name[i],
+                    MPIDI_CH4_Global.perf_profile_rdpmc_type,
+                    MPIDI_CH4_Global.perf_profile_rdpmc_config,
+                    (double)(MPIDI_CH4_Global.perf_profile_rdpmc_summ[i]) /
+                    MPIDI_CH4_Global.perf_profile_rdpmc_number[i],
+                    MPIDI_CH4_Global.perf_profile_rdpmc_number[i]);
+            fflush(stream);
+        }
+    }
+}
+
+#endif /* MPIDI_CH4U_PERF_PROFILE */
+
 #endif /* CH4_IMPL_H_INCLUDED */

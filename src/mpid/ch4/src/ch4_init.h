@@ -281,11 +281,16 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_Init(int *argc,
 
 #ifdef MPIDI_BUILD_CH4_SHM
     mpi_errno = MPIDI_SHM_mpi_init_hook(rank, size);
-
     if (mpi_errno != MPI_SUCCESS) {
         MPIR_ERR_POPFATAL(mpi_errno);
     }
 #endif
+
+#ifdef MPIDI_CH4U_PERF_PROFILE
+    MPIDI_CH4U_Perf_profile_init();
+    MPIDI_CH4U_Perf_profile_set_slot_name(0, "MPI_Send. AM only. Enter");
+    MPIDI_CH4U_Perf_profile_set_slot_name(1, "MPI_Send. AM only. Leave");
+#endif /* MPIDI_CH4U_PERF_PROFILE */
 
     if (mpi_errno != MPI_SUCCESS) {
         MPIR_ERR_POP(mpi_errno);
@@ -371,6 +376,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_Finalize(void)
 
     MPID_Thread_mutex_destroy(&MPIDI_CH4I_THREAD_PROGRESS_MUTEX, &thr_err);
     MPID_Thread_mutex_destroy(&MPIDI_CH4I_THREAD_PROGRESS_HOOK_MUTEX, &thr_err);
+
+#ifdef MPIDI_CH4U_PERF_PROFILE
+    MPIDI_CH4U_Perf_profile_dump(stdout);
+    MPIDI_CH4U_Perf_profile_finalize();
+#endif /* MPIDI_CH4U_PERF_PROFILE */
+
   fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_FINALIZE);
     return mpi_errno;

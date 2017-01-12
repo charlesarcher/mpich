@@ -317,7 +317,7 @@ static inline int MPIDI_SHM_mpi_exscan(const void *sendbuf, void *recvbuf, int c
 static inline int MPIDI_SHM_mpi_neighbor_allgather(const void *sendbuf, int sendcount,
                                                    MPI_Datatype sendtype, void *recvbuf,
                                                    int recvcount, MPI_Datatype recvtype,
-                                                   MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
+                                                   MPIR_Comm * comm_ptr)
 {
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_MPI_NEIGHBOR_ALLGATHER);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_MPI_NEIGHBOR_ALLGATHER);
@@ -335,8 +335,7 @@ static inline int MPIDI_SHM_mpi_neighbor_allgather(const void *sendbuf, int send
 static inline int MPIDI_SHM_mpi_neighbor_allgatherv(const void *sendbuf, int sendcount,
                                                     MPI_Datatype sendtype, void *recvbuf,
                                                     const int recvcounts[], const int displs[],
-                                                    MPI_Datatype recvtype, MPIR_Comm * comm_ptr,
-                                                    MPIR_Errflag_t * errflag)
+                                                    MPI_Datatype recvtype, MPIR_Comm * comm_ptr)
 {
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_MPI_NEIGHBOR_ALLGATHERV);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_MPI_NEIGHBOR_ALLGATHERV);
@@ -354,7 +353,7 @@ static inline int MPIDI_SHM_mpi_neighbor_allgatherv(const void *sendbuf, int sen
 static inline int MPIDI_SHM_mpi_neighbor_alltoall(const void *sendbuf, int sendcount,
                                                   MPI_Datatype sendtype, void *recvbuf,
                                                   int recvcount, MPI_Datatype recvtype,
-                                                  MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
+                                                  MPIR_Comm * comm_ptr)
 {
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_MPI_NEIGHBOR_ALLTOALL);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_MPI_NEIGHBOR_ALLTOALL);
@@ -373,7 +372,7 @@ static inline int MPIDI_SHM_mpi_neighbor_alltoallv(const void *sendbuf, const in
                                                    const int sdispls[], MPI_Datatype sendtype,
                                                    void *recvbuf, const int recvcounts[],
                                                    const int rdispls[], MPI_Datatype recvtype,
-                                                   MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
+                                                   MPIR_Comm * comm_ptr)
 {
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_MPI_NEIGHBOR_ALLTOALLV);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_MPI_NEIGHBOR_ALLTOALLV);
@@ -393,7 +392,7 @@ static inline int MPIDI_SHM_mpi_neighbor_alltoallw(const void *sendbuf, const in
                                                    const MPI_Datatype sendtypes[], void *recvbuf,
                                                    const int recvcounts[], const MPI_Aint rdispls[],
                                                    const MPI_Datatype recvtypes[],
-                                                   MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
+                                                   MPIR_Comm * comm_ptr)
 {
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_MPI_NEIGHBOR_ALLTOALLW);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_MPI_NEIGHBOR_ALLTOALLW);

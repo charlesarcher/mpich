@@ -55,15 +55,42 @@ static inline int MPIDI_am_isend(const void *buf, int count, MPI_Datatype dataty
         ssend_req.sreq_ptr = (uint64_t) sreq;
         MPIR_cc_incr(sreq->cc_ptr, &c);
 
-        mpi_errno = MPIDI_NM_am_isend(rank, comm, MPIDI_CH4U_SSEND_REQ,
-                                      &ssend_req, sizeof(ssend_req),
-                                      buf, count, datatype, sreq, NULL);
+#ifdef MPIDI_CH4_EXCLUSIVE_SHM
+        int r;
+        if ((r = MPIDI_CH4_rank_is_local(rank, comm)))
+        {
+            mpi_errno = MPIDI_SHM_am_isend(rank, comm, MPIDI_CH4U_SSEND_REQ,
+                                           &ssend_req, sizeof(ssend_req),
+                                           buf, count, datatype, sreq, NULL);
+        }
+        else
+        {
+#endif /* MPIDI_CH4_EXCLUSIVE_SHM */
+            mpi_errno = MPIDI_NM_am_isend(rank, comm, MPIDI_CH4U_SSEND_REQ,
+                                          &ssend_req, sizeof(ssend_req),
+                                          buf, count, datatype, sreq, NULL);
+#ifdef MPIDI_CH4_EXCLUSIVE_SHM
+        }
+#endif /* MPIDI_CH4_EXCLUSIVE_SHM */
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
     }
     else {
-        mpi_errno = MPIDI_NM_am_isend(rank, comm, MPIDI_CH4U_SEND,
-                                      &am_hdr, sizeof(am_hdr), buf, count, datatype, sreq, NULL);
+#ifdef MPIDI_CH4_EXCLUSIVE_SHM
+        int r;
+        if ((r = MPIDI_CH4_rank_is_local(rank, comm)))
+        {
+            mpi_errno = MPIDI_SHM_am_isend(rank, comm, MPIDI_CH4U_SEND,
+                                           &am_hdr, sizeof(am_hdr), buf, count, datatype, sreq, NULL);
+        }
+        else
+        {
+#endif /* MPIDI_CH4_EXCLUSIVE_SHM */
+            mpi_errno = MPIDI_NM_am_isend(rank, comm, MPIDI_CH4U_SEND,
+                                          &am_hdr, sizeof(am_hdr), buf, count, datatype, sreq, NULL);
+#ifdef MPIDI_CH4_EXCLUSIVE_SHM
+        }
+#endif /* MPIDI_CH4_EXCLUSIVE_SHM */
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
     }

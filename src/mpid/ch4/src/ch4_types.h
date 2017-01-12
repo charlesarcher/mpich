@@ -93,7 +93,9 @@ enum {
     MPIDI_CH4U_WIN_LOCKALL,
     MPIDI_CH4U_WIN_LOCKALL_ACK,
     MPIDI_CH4U_WIN_UNLOCKALL,
-    MPIDI_CH4U_WIN_UNLOCKALL_ACK
+    MPIDI_CH4U_WIN_UNLOCKALL_ACK,
+
+    MPIDI_CH4U_PKT_MAX
 };
 
 enum {
@@ -250,6 +252,32 @@ typedef struct {
     int *free_avtid;
 } MPIDI_CH4_avt_manager;
 
+#if 0
+#define MPIDI_CH4U_PERF_PROFILE
+#endif
+
+#ifdef MPIDI_CH4U_PERF_PROFILE
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/mman.h>
+#include <sys/fcntl.h>
+#include <linux/perf_event.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <asm/unistd.h>
+
+struct rdpmc_ctx {
+    int fd;
+    struct perf_event_mmap_page *buf;
+};
+
+#define RDPMC_PERF_DEFAULT_TYPE   (PERF_TYPE_HARDWARE)
+#define RDPMC_PERF_DEFAULT_CONFIG (PERF_COUNT_HW_CPU_CYCLES)
+
+#define RDPMC_PERF_MAX_SLOT_NUMBER (16)
+#define RDPMC_PERF_MAX_SLOT_NAME   (256)
+#endif /* MPIDI_CH4U_PERF_PROFILE */
+
 typedef struct MPIDI_CH4_Global_t {
     MPIR_Request *request_test;
     MPIR_Comm *comm_test;
@@ -277,6 +305,18 @@ typedef struct MPIDI_CH4_Global_t {
     OPA_int_t nxt_seq_no;
     void *netmod_context[8];
     MPIU_buf_pool_t *buf_pool;
+#ifdef MPIDI_CH4U_PERF_PROFILE
+    struct rdpmc_ctx perf_profile_rdpmc_ctx;
+
+    uint64_t perf_profile_rdpmc_begin[RDPMC_PERF_MAX_SLOT_NUMBER];
+    uint64_t perf_profile_rdpmc_summ[RDPMC_PERF_MAX_SLOT_NUMBER];
+    uint64_t perf_profile_rdpmc_number[RDPMC_PERF_MAX_SLOT_NUMBER];
+  
+    char perf_profile_rdpmc_slot_name[RDPMC_PERF_MAX_SLOT_NUMBER][RDPMC_PERF_MAX_SLOT_NAME];
+
+    uint32_t perf_profile_rdpmc_type;
+    uint32_t perf_profile_rdpmc_config;
+#endif /* MPIDI_CH4U_PERF_PROFILE */
 } MPIDI_CH4_Global_t;
 extern MPIDI_CH4_Global_t MPIDI_CH4_Global;
 #ifdef MPL_USE_DBG_LOGGING
